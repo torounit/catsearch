@@ -1,87 +1,95 @@
 <?php
+namespace App;
+
 require 'vendor/autoload.php';
 require 'config.php';
-
-
-
-
-$twitter = new TwitterOAuth(API_KEY, API_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET);
 
 
 $app = new \Slim\Slim(array(
     "templates.path" => "templates"
 ));
 
-$cache = new SimpleCache();
+Class Cache {
 
+	private $cache;
 
-function get_data($url) {
-	global $cache;
-	$label = md5($url);
-	if($data = $cache->get_cache( $label )){
-	} else {
-	    $data = @file_get_contents($url);
-	    $cache->set_cache($label, $data);
-
-	}
-	$data = json_decode($data);
-
-	return $data;
-}
-
-
-function photos($lat, $lng) {
-
-	global $twitter;
-	global $cache;
-	$param = array(
-		"q" => "instagram.com%20猫%20OR%20ねこ",
-		"geocode" => $lat.",".$lng.",5km",
-		"count" => 100
-	);
-
-	md5(serialize($param));
-	$label = md5(serialize($param));
-	if($data = $cache->get_cache( $label )){
-
-	} else {
-	    $data = $twitter->get( "search/tweets", $param);
-	    $cache->set_cache($label, json_encode($data));
+	public function __construct() {
+		$this->init();
 	}
 
-	if(!is_object($data)) {
-		$data = json_decode($data);
+	public function init() {
+		$this->cache = new \SimpleCache();
 	}
 
-	$tweets = $data->statuses;
-
-	$photos = array();
-	foreach ($tweets as $key => $tweet) {
-		$url = $tweet->entities->urls[0]->expanded_url;
-		$media = get_data("http://api.instagram.com/oembed?url=".$url);
-		$content = null;
-
-		if(is_object($media)) {
-			$content = get_data("https://api.instagram.com/v1/media/".$media->media_id."?access_token=".INSTAGRAM_TOKEN);
-			if(isset($content->data->images->standard_resolution->url)) {
-				$photos[] = array(
-					"data" => $content->data->images->standard_resolution,
-					"url" => $url
-				);
+	public function get( $label , $callback ) {
+		$data = null;
+		if($data = $this->cache->get_cache( $label )){
+		} else {
+			if ( is_callable( $callback ) ) {
+				$data = call_user_func( $callback );
+				$this->cache->set_cache($label, $data);
 			}
 		}
+
+		if(!is_object($data)) {
+			$data = json_decode($data);
+		}
+
+		return $data;
 	}
 
-	return $photos;
 }
 
+
+Class Location {
+	private $twitter;
+	private $cache;
+	private $param;
+
+	public function __construct() {
+		$this->twitterOAuth();
+		$this->cache = new Cache();
+	}
+
+	public function twitterOAuth() {
+		$this->twitter = new \TwitterOAuth(API_KEY, API_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET);
+	}
+
+	public function search() {
+		$data = $this->cache->get( md5(serialize($this->param)), array($this,"request"));
+		return $data->statuses;
+	}
+
+	public function request() {
+		return $this->twitter->get( "search/tweets", $this->param);
+	}
+
+
+	public function get_photos($lat, $lng) {
+		$this->param = array(
+			"q" => "instagram.com%20猫%20OR%20ねこ",
+			"geocode" => $lat.",".$lng.",5km",
+			"count" => 100
+		);
+
+		$tweets = $this->search();
+		return array_map(function($tweet){
+			return array(
+				"url" => $tweet->entities->urls[0]->expanded_url,
+				"src" => $tweet->entities->urls[0]->expanded_url."media/?size=m"
+				);
+		}, $tweets);
+	}
+}
 
 $app->get('/', function () use($app) {
 	$app->render("index.php", array("photos" => array() ));
 });
 
 $app->get('/location/:lat/:lng', function ($lat, $lng) use($app) {
-	$app->render("index.php", array("photos" => photos($lat, $lng)));
+	$location = new Location();
+	#print_r($location->get_photos($lat, $lng));
+	$app->render("index.php", array("photos" => $location->get_photos($lat, $lng) ));
 });
 
 $app->run();

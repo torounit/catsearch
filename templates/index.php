@@ -35,7 +35,7 @@
 			}
 			?>
 			<div class="col-xs col-md-3">
-				<a href="<?php echo $photo["url"];?>" target="_blank"><img class="img-responsive photo" src="<?php echo $photo["data"]->url;?>" alt="" width="<?php echo $photo["data"]->width;?>" height="<?php echo $photo["data"]->height;?>"></a>
+				<a href="<?php echo $photo["url"];?>" target="_blank"><img class="img-responsive photo" src="<?php echo $photo["src"];?>"></a>
 			</div>
 
 			<?php
