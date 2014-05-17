@@ -1,0 +1,7 @@
+{
+    "require": {
+        "slim/slim": "2.*",
+        "kertz/twitteroauth": "dev-master",
+        "gilbitron/php-simplecache": "dev-master"
+    }
+}™

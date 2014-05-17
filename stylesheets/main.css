@@ -1,0 +1,14 @@
+body{
+				background-image:url(../images/back.jpg);
+				background-attachment:fixed;
+}
+.hd-color{
+				background:rgba(255,255,255,0.3);
+				border-radius:5px;
+}
+
+.photo {
+	margin-bottom: 20px;
+}
+
+
