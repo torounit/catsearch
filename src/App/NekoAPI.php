@@ -10,7 +10,7 @@ Class NekoAPI {
 
 	public function __construct() {
 		$this->twitterOAuth();
-		$this->cache = new Cache();
+		$this->cache = new SimpleCacheAdapter();
 	}
 
 	private function twitterOAuth() {
@@ -20,7 +20,7 @@ Class NekoAPI {
 	public function getTweets( $param ) {
 
 		$data = $this->cache->get( function ($param) {
-			return $this->twitter->get( "search/tweets", $param);
+			return $this->twitter->get("search/tweets", $param);
 		}, $param );
 
 		return $data->statuses;
