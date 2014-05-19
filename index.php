@@ -15,7 +15,7 @@ $app->get('/', function () use($app) {
 
 $app->get('/location/:lat/:lng', function ($lat, $lng) use($app) {
 	$nekoapi = new \App\NekoAPI();
-	$app->render("index.php", array("photos" => $nekoapi->getPhotos($lat, $lng) ));
+	$app->render("index.php", array("photos" => $nekoapi->getLocationPhotos($lat, $lng) ));
 });
 
 $app->run();
